@@ -1,0 +1,137 @@
+
+---
+title: "Análisis Estadístico - Cátedra AES1018"
+author: "Estudiante"
+format: pdf
+editor: visual
+---
+
+## 1. Análisis Descriptivo
+
+### Clasificación de variables
+
+Las variables del conjunto de datos se clasifican de la siguiente forma:
+
+| Variable             | Tipo de Variable                   |
+|----------------------|------------------------------------|
+| ID                   | Cualitativa nominal (ID única)     |
+| Sexo                 | Cualitativa nominal                |
+| Edad                 | Cuantitativa continua              |
+| Fuma                 | Cualitativa nominal                |
+| Estatura             | Cualitativa ordinal (Baja/Alta)   |
+| Colegio              | Cualitativa nominal                |
+| Estrato              | Cuantitativa discreta              |
+| Financiacion         | Cualitativa nominal                |
+| Acumulado            | Cuantitativa continua              |
+| Gastos               | Cuantitativa continua              |
+| Ingreso              | Cuantitativa continua (en millones)|
+| Clases               | Cualitativa nominal                |
+| Pandemia             | Cualitativa ordinal                |
+| Clases_virtuales     | Cualitativa ordinal                |
+| Estadistica          | Cualitativa ordinal                |
+| Inseguridad          | Cualitativa ordinal                |
+| Vida_cotidiana       | Cualitativa ordinal                |
+| Puntaje              | Cuantitativa discreta              |
+
+### Carga de datos
+
+```{r}
+library(readxl)
+library(dplyr)
+library(ggplot2)
+library(e1071)
+
+datos <- read_excel("Estudiantes.xlsx")
+```
+
+### Tabla de frecuencia para variable cuantitativa (Edad)
+
+```{r}
+table(cut(datos$Edad, breaks = 10))
+```
+
+### Gráficos
+
+```{r}
+# Histograma de Edad
+ggplot(datos, aes(x = Edad)) +
+  geom_histogram(binwidth = 1, fill = "skyblue", color = "black") +
+  labs(title = "Histograma de Edad", x = "Edad", y = "Frecuencia")
+
+# Diagrama de caja por Sexo
+ggplot(datos, aes(x = Sexo, y = Edad)) +
+  geom_boxplot(fill = "lightgreen") +
+  labs(title = "Diagrama de Caja de Edad según Sexo")
+```
+
+### Estadígrafos
+
+```{r}
+# Edad
+media <- mean(datos$Edad, na.rm = TRUE)
+mediana <- median(datos$Edad, na.rm = TRUE)
+moda <- names(sort(table(datos$Edad), decreasing = TRUE))[1]
+rango <- diff(range(datos$Edad, na.rm = TRUE))
+desv <- sd(datos$Edad, na.rm = TRUE)
+varianza <- var(datos$Edad, na.rm = TRUE)
+cv <- desv / media
+
+list(Media = media, Mediana = mediana, Moda = moda,
+     Rango = rango, Desviación = desv,
+     Varianza = varianza, Coef_Variación = cv)
+```
+
+### Medidas de forma y outliers
+
+```{r}
+# Asimetría y curtosis
+asimetria <- skewness(datos$Edad, na.rm = TRUE)
+curtosis <- kurtosis(datos$Edad, na.rm = TRUE)
+list(Asimetria = asimetria, Curtosis = curtosis)
+
+# Boxplot para detectar outliers
+boxplot(datos$Edad, main = "Outliers en Edad", col = "orange")
+```
+
+## 2. Muestreo y Probabilidades
+
+### a) Probabilidad de ingreso menor o igual a $1.500.000
+
+```{r}
+set.seed(123)
+muestra <- sample(datos$Ingreso, 150, replace = FALSE)
+media_ingreso <- mean(muestra, na.rm = TRUE)
+desv_ingreso <- sd(muestra, na.rm = TRUE)
+
+# Probabilidad usando distribución normal
+pnorm(1.5, mean = media_ingreso, sd = desv_ingreso)
+```
+
+### b) Probabilidad de ingreso mayor a $1.000.000
+
+```{r}
+1 - pnorm(1, mean = media_ingreso, sd = desv_ingreso)
+```
+
+### c) Muestreo estratificado por Estrato
+
+```{r}
+library(dplyr)
+
+muestra_estrat <- datos %>%
+  group_by(Estrato) %>%
+  sample_n(50)
+
+# Media y varianza por estrato
+resumen_estrato <- muestra_estrat %>%
+  summarise(Media_Ingreso = mean(Ingreso, na.rm = TRUE),
+            Varianza_Ingreso = var(Ingreso, na.rm = TRUE))
+
+resumen_estrato
+
+# Comparar con muestra total
+media_total <- mean(datos$Ingreso, na.rm = TRUE)
+var_total <- var(datos$Ingreso, na.rm = TRUE)
+
+list(Media_Total = media_total, Varianza_Total = var_total)
+```
